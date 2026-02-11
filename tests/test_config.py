@@ -26,7 +26,7 @@ def test_discriminator_config_defaults():
     assert dc.model.name == "openai/gpt-5"
     assert dc.model.is_reasoning is True
     assert dc.criteria == ""
-    assert dc.constraints == ""
+    assert dc.additional_info == ""
     assert dc.show_expected is False
 def test_discriminator_config_list_criteria():
     dc = DiscriminatorConfig(criteria=["accuracy", "reasoning"])

@@ -21,7 +21,7 @@ class DiscriminatorConfig(BaseModel):
 
     model: ModelConfig = ModelConfig(name="openai/gpt-5", is_reasoning=True)
     criteria: str | list[str] = ""
-    constraints: str | list[str] = ""
+    additional_info: str | list[str] = ""
     show_expected: bool = False
 
 

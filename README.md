@@ -1,6 +1,6 @@
 # PrefPO: Preference-based Prompt Optimization
 
-Lightweight, async preference-based prompt optimization. Give PrefPO a pool of prompt candidates and a grader — it iteratively improves them using LLM-as-judge feedback.
+Lightweight, preference-based prompt optimization. Give PrefPO a pool of prompt candidates and a grader — it iteratively improves them using LLM-as-judge feedback (no need to label data).
 
 - **Two optimization modes**: instruction (shared prompt + data samples) and standalone (prompt-is-the-task, no samples needed)
 - **Low-data**: works with small datasets that don't need to be labeled; standalone mode needs no dataset
@@ -19,7 +19,7 @@ PrefPO implements the PRPO (Preference-based Prompt Optimization) loop:
 5. **Evaluate** the new prompt with your grader, add it to the pool, repeat
 6. **Select** — after all iterations, return the prompt with the highest grader score
 
-The discriminator and optimizer share context via message-passing and use [litellm](https://docs.litellm.ai/docs/providers) for model routing.
+The task model, discriminator, and optimizer use [litellm](https://docs.litellm.ai/docs/providers) for model routing.
 
 ## Installation
 
@@ -27,7 +27,7 @@ The discriminator and optimizer share context via message-passing and use [litel
 pip install -e .
 ```
 
-For IFEval/IFBench support (requires the official IFEval checker):
+For IFEval/IFEval-Hard/IFBench support (requires the official IFEval checker):
 
 ```bash
 pip install -e ".[ifeval]"
@@ -47,9 +47,9 @@ Requires Python 3.11+. Set the API key for your provider as an environment varia
 
 ## Quick Start — Instruction Mode
 
-Instruction mode optimizes a shared instruction that gets prepended to every question in a dataset (either as the user prompt or the system prompt). Use this when you have a single prompt you want to optimize for a dataset of many questions. Each prompt is scored by your grader on the validation set (or train if no val is provided), and the highest-scoring prompt is returned. You can use a built-in grader or write your own.
+Instruction mode optimizes a shared instruction that gets prepended to every question in a dataset (either as the user prompt or the system prompt). Use this when you have a single prompt you want to optimize for a dataset of many questions. Each prompt is scored by your grader on the validation set (or train if no val is provided), and the highest-scoring prompt is returned. You can use a built-in grader or write your own for custom evaluation logic.
 
-**With a built-in grader** — PrefPO includes graders for BBH tasks that check model outputs against ground truth answers:
+**With the built-in grader** — PrefPO includes graders for BBH tasks that check model outputs against ground truth answers:
 
 ```python
 from prefpo import PrefPOConfig, optimize
@@ -90,7 +90,7 @@ class LLMJudgeGrader(Grader):
             from prefpo import call_llm
             judge_resp = await call_llm(
                 model="openai/gpt-4o",
-                messages=[{"role": "user", "content": f"Question: {s.question}\nExpected: {s.target}\nResponse: {o.response}\n\nScore 0 or 1:"}],
+                messages=[{"role": "user", "content": f"Question: {s.question}\nExpected: {s.target}\nResponse: {o.response}\n\nScore 0 or 1 if the response is correct:"}],
             )
             score += int("1" in judge_resp.output_text)
         return GradeResult(score=score / len(outputs), n=len(outputs))
@@ -231,22 +231,24 @@ config = PrefPOConfig.from_yaml("config.yaml")
 
 ## Key Concepts
 
-### Criteria and Constraints
+### Criteria, Additional Info, and Constraints
 
-**Discriminator criteria** tell the judge what to evaluate on. **Constraints** provide additional rules for both the discriminator and optimizer. Both accept a string or list of strings.
-Think of criteria as the evaluation signal for the judge — plain text is enough to get started.
+**Discriminator criteria** tell the judge what to evaluate on. **Additional info** gives the discriminator extra context to make better judgements — this can be constraints, background knowledge, domain-specific rules, or anything else that helps the judge compare prompts more accurately. **Optimizer constraints** are rules the optimizer must follow when rewriting prompts. All three accept a string or list of strings.
 
 ```python
 discriminator=DiscriminatorConfig(
-    criteria=["correctness", "reasoning quality"],
-    constraints="Ignore formatting differences",
+    criteria=[
+        "Correctness of the final answer — does the model arrive at the right conclusion?",
+        "Quality of reasoning — are the intermediate steps logical, complete, and clearly explained?",
+    ],
+    additional_info="Ignore minor formatting differences like whitespace or punctuation",
 )
 optimizer=OptimizerConfig(
     constraints="Do not remove the 'ANSWER: $LETTER' format requirement",
 )
 ```
 
-Criteria appear in the discriminator prompt as `CRITERIA TO EVALUATE ON`. Optimizer constraints appear as `CONSTRAINTS FOR YOUR OUTPUT`.
+Criteria appear in the discriminator prompt as `CRITERIA TO EVALUATE ON`. Additional info appears as `ADDITIONAL INFORMATION`. Optimizer constraints appear as `CONSTRAINTS FOR YOUR OUTPUT`.
 
 ### Expected Answers (`show_expected`)
 
@@ -463,7 +465,7 @@ All public symbols are exported from the top-level `prefpo` package.
 | `optimize_multi_trial(config, grader, ...)` | Run multiple independent trials in parallel |
 | `PrefPOConfig` | Top-level configuration (mode, models, pool, run settings) |
 | `ModelConfig` | Model name, temperature, reasoning settings |
-| `DiscriminatorConfig` | Judge model, criteria, constraints, show_expected |
+| `DiscriminatorConfig` | Judge model, criteria, additional_info, show_expected |
 | `OptimizerConfig` | Optimizer model and constraints |
 | `OptimizationResult` | Result with best_prompt, best_score, history, total_tokens |
 | `MultiTrialResult` | Aggregated results across trials (mean, std, per-trial data) |

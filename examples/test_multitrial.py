@@ -62,7 +62,7 @@ if __name__ == "__main__":
         discriminator={
             "model": {"name": "openai/gpt-4.1", "is_reasoning": False},
             "show_expected": True,
-            "criteria": "correctness of the final numerical answer",
+            "criteria": "Correctness of the final numerical answer — check whether the model arrives at the right number and whether the step-by-step work leading to it is mathematically sound",
         },
         pool={
             "initial_prompts": [
