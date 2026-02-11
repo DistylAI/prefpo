@@ -24,7 +24,7 @@ def _get_dataset():
     """Get or load the cached IFEval-Hard dataset."""
     global _dataset
     if _dataset is None:
-        _dataset = load_dataset(DATASET_ID, split="train")
+        _dataset = load_dataset(DATASET_ID, split="eval")
     return _dataset
 
 

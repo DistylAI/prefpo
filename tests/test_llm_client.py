@@ -19,6 +19,7 @@ def _make_litellm_response(text: str, response_id: str = "resp_test"):
     text_block.text = text
 
     output_item = MagicMock()
+    output_item.type = "message"
     output_item.content = [text_block]
 
     response = MagicMock()

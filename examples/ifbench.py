@@ -23,10 +23,9 @@ Key differences from instruction mode (see gsm8k.py):
 """
 
 # These come from the instruction_following_eval package:
-#   pip install git+https://github.com/josejg/instruction_following_eval.git
-# (automatically installed with prefpo)
-import evaluation_lib
-import instructions_registry
+#   pip install prefpo[ifeval]
+from instruction_following_eval.evaluation import InputExample, test_instruction_following
+from instruction_following_eval.instructions_registry import INSTRUCTION_DICT
 from datasets import load_dataset
 
 from prefpo import PrefPOConfig, Grader, GradeResult, optimize
@@ -58,7 +57,7 @@ def load_ifbench_sample(idx: int) -> dict:
     # Generate human-readable criteria from constraint specs
     criteria = []
     for i, inst_id in enumerate(sample["instruction_id_list"]):
-        cls = instructions_registry.INSTRUCTION_DICT[inst_id]
+        cls = INSTRUCTION_DICT[inst_id]
         checker = cls(inst_id)
         kw = {k: v for k, v in sample["kwargs"][i].items() if v is not None}
         kw = {k: int(v) if isinstance(v, float) and v == int(v) else v
@@ -107,15 +106,13 @@ class IFBenchGrader(Grader):
         all_pass = 0
         per_sample = []
         for o in outputs:
-            inp = evaluation_lib.InputExample(
+            inp = InputExample(
                 key=0,
                 instruction_id_list=self.instruction_id_list,
                 prompt=self.original_prompt,
                 kwargs=self.kwargs,
             )
-            result = evaluation_lib.test_instruction_following_strict(
-                inp, {self.original_prompt: o.response},
-            )
+            result = test_instruction_following(inp, o.response, strict=True)
             if result.follow_all_instructions:
                 all_pass += 1
             per_sample.append({
@@ -136,15 +133,13 @@ class IFBenchGrader(Grader):
         judge can see pass/fail annotations alongside the text. Only needed if
         you set show_expected=True in the discriminator config.
         """
-        inp = evaluation_lib.InputExample(
+        inp = InputExample(
             key=0,
             instruction_id_list=self.instruction_id_list,
             prompt=self.original_prompt,
             kwargs=self.kwargs,
         )
-        result = evaluation_lib.test_instruction_following_strict(
-            inp, {self.original_prompt: output},
-        )
+        result = test_instruction_following(inp, output, strict=True)
         return {
             "all_pass": result.follow_all_instructions,
             "per_constraint": dict(zip(
