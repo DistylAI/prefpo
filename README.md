@@ -19,7 +19,7 @@ PrefPO implements the PRPO (Preference-based Prompt Optimization) loop:
 5. **Evaluate** the new prompt with your grader, add it to the pool, repeat
 6. **Select** — after all iterations, return the prompt with the highest grader score
 
-The discriminator and optimizer share context via message-passing, so PrefPO works with any [litellm-supported provider](https://docs.litellm.ai/docs/providers) (OpenAI, Anthropic, DeepSeek, Gemini, etc.).
+The discriminator and optimizer share context via message-passing and use [litellm](https://docs.litellm.ai/docs/providers) for model routing.
 
 ## Installation
 
@@ -27,13 +27,17 @@ The discriminator and optimizer share context via message-passing, so PrefPO wor
 pip install -e .
 ```
 
-For IFEval support (optional — adds the official IFEval checker, nltk, and langdetect):
+Requires Python 3.11+. Set the API key for your provider as an environment variable (e.g. `OPENAI_API_KEY`). Model names use litellm's `"provider/model"` format.
 
-```bash
-pip install -e ".[ifeval]"
-```
-
-Requires Python 3.11+. Set the API key for your provider as an environment variable (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). Model names use litellm's `"provider/model"` format — see [litellm providers](https://docs.litellm.ai/docs/providers) for the full list.
+> **Model defaults and compatibility:**
+>
+> | Role | Default | Purpose |
+> |------|---------|---------|
+> | Task model | *none — you choose* | The model being optimized (generates responses) |
+> | Discriminator | `openai/gpt-5` (reasoning) | Compares prompt pairs and picks the better one |
+> | Optimizer | `openai/gpt-5` (reasoning) | Rewrites the losing prompt using judge feedback |
+>
+> The discriminator and optimizer require structured JSON output. OpenAI models enforce this reliably via JSON schema mode and are the recommended choice. Other providers may not guarantee valid JSON responses, which can cause parse failures. The task model has no such restriction — it can be any litellm-supported provider.
 
 ## Quick Start — Instruction Mode
 
