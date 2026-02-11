@@ -1,4 +1,4 @@
-# PrefPO
+# PrefPO: Preference-based Prompt Optimization
 
 Lightweight, async preference-based prompt optimization. Give PrefPO a pool of prompt candidates and a grader — it iteratively improves them using LLM-as-judge feedback.
 
@@ -37,7 +37,7 @@ Requires Python 3.11+. Set the API key for your provider as an environment varia
 > | Discriminator | `openai/gpt-5` (reasoning) | Compares prompt pairs and picks the better one |
 > | Optimizer | `openai/gpt-5` (reasoning) | Rewrites the losing prompt using judge feedback |
 >
-> The discriminator and optimizer require structured JSON output. OpenAI models enforce this reliably via JSON schema mode and are the recommended choice. Other providers may not guarantee valid JSON responses, which can cause parse failures. The task model has no such restriction — it can be any litellm-supported provider.
+> The discriminator and optimizer require structured JSON output via JSON schema mode. OpenAI, Anthropic (Claude 3.5+), and Gemini (2.0+) all enforce this natively and are fully supported. Other providers may vary — check [litellm's structured output docs](https://docs.litellm.ai/docs/completion/json_mode) for the full list. The task model has no such restriction — it can be any litellm-supported provider.
 
 ## Quick Start — Instruction Mode
 

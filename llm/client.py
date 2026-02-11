@@ -38,10 +38,14 @@ def _get_output_text(response: Any) -> str:
     """Extract output text from a litellm ResponsesAPIResponse.
 
     litellm does NOT have .output_text — we walk response.output[i].content[j]
-    looking for type=="output_text". Reasoning model responses have items with
-    content=None (reasoning summary items) which we skip.
+    looking for type=="output_text" inside type=="message" items. Reasoning
+    model responses include type=="reasoning" items whose content contains the
+    thinking text (not the actual response). We skip those by filtering on
+    item.type, which is part of the Responses API spec across all providers.
     """
     for item in response.output:
+        if getattr(item, "type", None) != "message":
+            continue
         content = getattr(item, "content", None)
         if not content:
             continue
