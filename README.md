@@ -172,6 +172,17 @@ python examples/judges.py
 python examples/ifeval_hard_llm_judge.py
 ```
 
+### Integration tests
+
+Short scripts that verify different model/provider combinations work end-to-end:
+
+| File | What it tests |
+|------|--------------|
+| [`test_multitrial.py`](examples/test_multitrial.py) | Multi-trial (`n_trials=2`), `vary_seed`, non-reasoning OpenAI discriminator (`gpt-4.1`) |
+| [`test_anthropic_disc.py`](examples/test_anthropic_disc.py) | Anthropic discriminator (Claude Sonnet 4.5), `prompt_role="system"`, `update_strategy="replace"` |
+| [`test_anthropic_opt.py`](examples/test_anthropic_opt.py) | Anthropic reasoning optimizer (Claude Sonnet 4.5), standalone mode |
+| [`test_all_anthropic.py`](examples/test_all_anthropic.py) | All-Anthropic pipeline — no OpenAI key needed |
+
 ## YAML Configuration
 
 Configs can be defined in YAML and loaded with `PrefPOConfig.from_yaml()`:
