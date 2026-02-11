@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     config = PrefPOConfig(
         mode="instruction",
-        task_model={"name": "gemini/gemini-2.0-flash"},
+        task_model={"name": "gemini/gemini-2.5-flash"},
         discriminator={
             "model": {"name": "openai/gpt-4.1", "is_reasoning": False},
             "show_expected": True,
