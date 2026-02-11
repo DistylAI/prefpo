@@ -1,0 +1,58 @@
+[project]
+name = "prefpo"
+version = "0.1.0"
+description = "Preference-based Prompt Optimization"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Rahul Singhal", email = "rahul@distyl.ai"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=1.0.0",
+    "litellm>=1.30.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "datasets>=2.0.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+ifeval = [
+    "instruction_following_eval @ git+https://github.com/josejg/instruction_following_eval.git",
+    "nltk>=3.8",
+    "langdetect>=1.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[project.urls]
+Homepage = "https://github.com/rahuls-coder/prefpo"
+Repository = "https://github.com/rahuls-coder/prefpo"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-dir]
+prefpo = "."
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["prefpo*"]
+
+[tool.setuptools.package-data]
+"prefpo.judges" = ["*.yaml"]
+
+[tool.pytest.ini_options]
+markers = ["live: tests that make real API calls (require API keys, cost money)"]
+addopts = "-m 'not live'"

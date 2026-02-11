@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Testing
+.pytest_cache/
+tests/output/
+
+# IDE / tooling
+.claude/
+.vscode/
+.idea/
+
+# Dev artifacts (not part of the public release)
+internal_testing/
+planning/
+scripts/
+CLAUDE.md
+=13.0

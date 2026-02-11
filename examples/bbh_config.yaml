@@ -1,0 +1,33 @@
+mode: "instruction"
+
+task_model:
+  name: "openai/gpt-4o"
+  temperature: 0.0
+
+discriminator:
+  model:
+    name: "openai/gpt-5"
+    is_reasoning: true
+    reasoning_effort: "medium"
+  show_target: true
+  criteria: "correctness and quality of reasoning"
+
+optimizer:
+  model:
+    name: "openai/gpt-5"
+    is_reasoning: true
+    reasoning_effort: "medium"
+  constraints: "Do not remove or modify the answer formatting rules (e.g. 'ANSWER: $LETTER'). These are required for automated grading."
+
+pool:
+  initial_prompts:
+    - "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of A,B,C."
+    - "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of A,B,C. Think step by step before answering."
+  prompt_role: "user"
+  update_strategy: "add"
+  sampling_seed: 42
+
+run:
+  iterations: 15
+  max_concurrent: 100
+  output_dir: "results/bbh_test"

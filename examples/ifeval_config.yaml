@@ -1,0 +1,29 @@
+mode: "standalone"
+
+task_model:
+  name: "openai/gpt-4o"
+  temperature: 0.0
+
+discriminator:
+  model:
+    name: "openai/gpt-5"
+    is_reasoning: true
+    reasoning_effort: "medium"
+  show_target: true
+  # criteria populated per-sample by build_ifeval_config()
+
+optimizer:
+  model:
+    name: "openai/gpt-5"
+    is_reasoning: true
+    reasoning_effort: "medium"
+
+pool:
+  initial_prompts: []  # Populated per-sample by build_ifeval_config()
+  prompt_role: "user"
+  update_strategy: "add"
+
+run:
+  iterations: 5
+  max_concurrent: 100
+  output_dir: "results/ifeval"
