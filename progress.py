@@ -68,17 +68,15 @@ class ProgressDisplay:
     ) -> None:
         if self._rich and self._progress is not None:
             self._progress.update(self._task_id, advance=1, best=best)
-            arrow = "↑" if score >= best else " "
             self._progress.console.print(
                 f"  [dim]Iter {iteration + 1}  preferred={preferred}  "
-                f"improved={score:.3f} {arrow}[/dim]"
+                f"improved={score:.3f}[/dim]"
             )
         elif self._text:
-            arrow = "^" if score >= best else " "
             print(
                 f"  Iter {iteration + 1}/{self._iterations}  "
                 f"preferred={preferred}  improved={score:.3f}  "
-                f"best={best:.3f} {arrow}"
+                f"best={best:.3f}"
             )
 
     def finish(
