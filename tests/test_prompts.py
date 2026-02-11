@@ -55,14 +55,14 @@ def test_discriminator_prompt_criteria_list():
     _, user_p = build_discriminator_prompt("a", "b", cfg)
     assert "- accuracy" in user_p
     assert "- reasoning quality" in user_p
-def test_discriminator_prompt_constraints():
-    cfg = DiscriminatorConfig(constraints=["be concise", "no jargon"])
+def test_discriminator_prompt_additional_info():
+    cfg = DiscriminatorConfig(additional_info=["be concise", "no jargon"])
     _, user_p = build_discriminator_prompt("a", "b", cfg)
     assert "ADDITIONAL INFORMATION:" in user_p
     assert "- be concise" in user_p
     assert "- no jargon" in user_p
 def test_discriminator_prompt_no_criteria_no_block():
-    cfg = DiscriminatorConfig(criteria="", constraints="")
+    cfg = DiscriminatorConfig(criteria="", additional_info="")
     _, user_p = build_discriminator_prompt("a", "b", cfg)
     assert "CRITERIA TO EVALUATE ON:" not in user_p
     assert "ADDITIONAL INFORMATION:" not in user_p
@@ -101,7 +101,7 @@ def test_optimizer_schema_structure():
 
 from prefpo.prompts.discriminator import (
     _format_criteria_block,
-    _format_constraints_block,
+    _format_additional_info_block,
     build_standalone_trajectory,
 )
 def test_standalone_trajectory_basic():
@@ -155,8 +155,8 @@ def test_format_criteria_block_empty_list():
     """Empty list returns empty string."""
     assert _format_criteria_block([]) == ""
     assert _format_criteria_block("") == ""
-def test_format_constraints_block_single_string():
+def test_format_additional_info_block_single_string():
     """Single string becomes one bullet."""
-    result = _format_constraints_block("be concise")
+    result = _format_additional_info_block("be concise")
     assert "- be concise" in result
     assert "ADDITIONAL INFORMATION:" in result

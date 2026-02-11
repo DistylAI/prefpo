@@ -25,7 +25,7 @@ if __name__ == "__main__":
                 "is_reasoning": False,
             },
             "show_expected": True,
-            "criteria": "correctness of the final answer",
+            "criteria": "Correctness of the final answer — for each question, check whether the model selected the right option and whether its reasoning logically supports that choice",
         },
         optimizer={
             "constraints": "Do not remove or modify the answer formatting rules (e.g. 'ANSWER: $LETTER'). These are required for automated grading.",

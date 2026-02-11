@@ -126,7 +126,7 @@ if __name__ == "__main__":
             # Set False for subjective tasks with no single right answer.
             "show_expected": True,
             # criteria: what the judge optimizes for (string or list of strings)
-            "criteria": "correctness of the final numerical answer",
+            "criteria": "Correctness of the final numerical answer — check whether the model arrives at the right number and whether the step-by-step work leading to it is mathematically sound",
         },
 
         optimizer={

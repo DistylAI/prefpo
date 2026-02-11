@@ -17,14 +17,14 @@ def _format_criteria_block(criteria: str | list[str]) -> str:
     return f"\nCRITERIA TO EVALUATE ON:\n{bullets}\n"
 
 
-def _format_constraints_block(constraints: str | list[str]) -> str:
-    """Format constraints as a bulleted block."""
-    if not constraints:
+def _format_additional_info_block(additional_info: str | list[str]) -> str:
+    """Format additional info as a bulleted block."""
+    if not additional_info:
         return ""
-    if isinstance(constraints, str):
-        items = [constraints]
+    if isinstance(additional_info, str):
+        items = [additional_info]
     else:
-        items = constraints
+        items = additional_info
     bullets = "\n".join(f"- {item}" for item in items)
     return f"\nADDITIONAL INFORMATION:\n{bullets}\n"
 
@@ -111,9 +111,9 @@ def build_discriminator_prompt(
     if criteria_block:
         parts.append(criteria_block)
 
-    constraints_block = _format_constraints_block(config.constraints)
-    if constraints_block:
-        parts.append(constraints_block)
+    info_block = _format_additional_info_block(config.additional_info)
+    if info_block:
+        parts.append(info_block)
 
     parts.append(
         "\n<Task>Be very smart, logical, and critical. Just provide concise "
