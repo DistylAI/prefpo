@@ -27,6 +27,12 @@ The discriminator and optimizer share context via message-passing and use [litel
 pip install -e .
 ```
 
+For IFEval/IFBench support (requires the official IFEval checker):
+
+```bash
+pip install -e ".[ifeval]"
+```
+
 Requires Python 3.11+. Set the API key for your provider as an environment variable (e.g. `OPENAI_API_KEY`). Model names use litellm's `"provider/model"` format.
 
 > **Model defaults and compatibility:**
