@@ -18,10 +18,13 @@ optimizer model so the first iteration has a pair to compare.
 Key differences from instruction mode (see gsm8k.py):
   - No train/val/test data — the grader handles everything internally
   - The grader ignores the `samples` argument and uses its own evaluation logic
-  - check_output() enables show_target, so the judge sees pass/fail annotations
+  - check_output() enables show_expected, so the judge sees pass/fail annotations
   - prompt_role must be "user" (standalone doesn't support system prompts)
 """
 
+# These come from the instruction_following_eval package:
+#   pip install git+https://github.com/josejg/instruction_following_eval.git
+# (automatically installed with prefpo)
 import evaluation_lib
 import instructions_registry
 from datasets import load_dataset
@@ -96,7 +99,7 @@ class IFBenchGrader(Grader):
         self.n_eval_trials = n_eval_trials
 
     async def grade(self, prompt, samples, model_config, semaphore):
-        # `samples` is ignored — we generate outputs and score them ourselves
+        # `samples` is not used — we generate outputs and score them ourselves
         outputs = await generate_standalone(
             prompt, model_config, semaphore, n=self.n_eval_trials,
         )
@@ -127,11 +130,11 @@ class IFBenchGrader(Grader):
         return GradeResult(score=score, n=len(outputs), per_sample=per_sample, outputs=raw_outputs)
 
     def check_output(self, output: str, prompt_text: str | None = None) -> dict:
-        """Annotate a single output for show_target trajectory display.
+        """Annotate a single output for show_expected trajectory display.
 
-        When show_target=True, PrefPO calls this on each generated output so the
+        When show_expected=True, PrefPO calls this on each generated output so the
         judge can see pass/fail annotations alongside the text. Only needed if
-        you set show_target=True in the discriminator config.
+        you set show_expected=True in the discriminator config.
         """
         inp = evaluation_lib.InputExample(
             key=0,
@@ -186,10 +189,10 @@ if __name__ == "__main__":
             task_model={"name": "openai/gpt-4o"},
 
             discriminator={
-                # show_target=True requires check_output() on the grader so the judge
+                # show_expected=True requires check_output() on the grader so the judge
                 # can see pass/fail annotations. Helps the judge make better decisions
                 # when you have a programmatic way to check correctness.
-                "show_target": True,
+                "show_expected": True,
                 # criteria: passed as human-readable descriptions so the judge knows
                 # what constraints to look for
                 "criteria": sample["criteria"],

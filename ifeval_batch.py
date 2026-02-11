@@ -111,7 +111,7 @@ async def run_ifeval_batch(
         base_config = PrefPOConfig(
             mode="standalone",
             task_model={"name": "openai/gpt-4o"},
-            discriminator={"show_target": True},
+            discriminator={"show_expected": True},
             pool={"initial_prompts": ["placeholder"], "prompt_role": "user"},
         )
 

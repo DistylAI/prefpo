@@ -12,7 +12,7 @@ from prefpo.types import ModelOutput, Prompt, PromptRole, Sample
 def test_instruction_trajectory_with_target():
     outputs = [ModelOutput(sample_index=0, prompt_sent="p", response="The answer is A")]
     samples = [Sample(index=0, question="Pick one", target="A")]
-    traj = build_instruction_trajectory(outputs, samples, show_target=True)
+    traj = build_instruction_trajectory(outputs, samples, show_expected=True)
     assert "Question:" in traj
     assert "Response:" in traj
     assert "Expected Answer:" in traj
@@ -20,7 +20,7 @@ def test_instruction_trajectory_with_target():
 def test_instruction_trajectory_without_target():
     outputs = [ModelOutput(sample_index=0, prompt_sent="p", response="The answer is A")]
     samples = [Sample(index=0, question="Pick one", target="A")]
-    traj = build_instruction_trajectory(outputs, samples, show_target=False)
+    traj = build_instruction_trajectory(outputs, samples, show_expected=False)
     assert "Expected Answer:" not in traj
 def test_instruction_trajectory_multiple_samples():
     outputs = [
@@ -31,7 +31,7 @@ def test_instruction_trajectory_multiple_samples():
         Sample(index=0, question="Q1", target="A"),
         Sample(index=1, question="Q2", target="B"),
     ]
-    traj = build_instruction_trajectory(outputs, samples, show_target=True)
+    traj = build_instruction_trajectory(outputs, samples, show_expected=True)
     assert "Sample 1" in traj
     assert "Sample 2" in traj
     assert "resp1" in traj
@@ -105,26 +105,26 @@ from prefpo.prompts.discriminator import (
     build_standalone_trajectory,
 )
 def test_standalone_trajectory_basic():
-    """build_standalone_trajectory without show_target."""
+    """build_standalone_trajectory without show_expected."""
     outputs = [ModelOutput(sample_index=-1, prompt_sent="p", response="hello")]
 
     class _Grader:
         def check_output(self, output, prompt_text=None):
             return {"ok": True}
 
-    traj = build_standalone_trajectory(outputs, _Grader(), show_target=False)
+    traj = build_standalone_trajectory(outputs, _Grader(), show_expected=False)
     assert "Output:" in traj
     assert "hello" in traj
     assert "Grade:" not in traj
 def test_standalone_trajectory_with_grade():
-    """build_standalone_trajectory with show_target and grader."""
+    """build_standalone_trajectory with show_expected and grader."""
     outputs = [ModelOutput(sample_index=-1, prompt_sent="p", response="hello")]
 
     class _Grader:
         def check_output(self, output, prompt_text=None):
             return {"passed": True, "score": 1.0}
 
-    traj = build_standalone_trajectory(outputs, _Grader(), show_target=True, prompt_text="test")
+    traj = build_standalone_trajectory(outputs, _Grader(), show_expected=True, prompt_text="test")
     assert "Grade:" in traj
     assert "passed" in traj
 def test_standalone_trajectory_none_check_output_raises():
@@ -137,7 +137,7 @@ def test_standalone_trajectory_none_check_output_raises():
 
     import pytest
     with pytest.raises(ValueError, match="check_output"):
-        build_standalone_trajectory(outputs, _Grader(), show_target=True, prompt_text="test")
+        build_standalone_trajectory(outputs, _Grader(), show_expected=True, prompt_text="test")
 # --- Edge cases for prompt building ---
 def test_optimizer_prompt_empty_feedback():
     """Empty string feedback is handled."""

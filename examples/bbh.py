@@ -28,7 +28,7 @@ if __name__ == "__main__":
         mode="instruction",
         task_model={"name": "openai/gpt-4o"},
         discriminator={
-            "show_target": True,
+            "show_expected": True,
             "criteria": "correctness of the final answer",
         },
         optimizer={

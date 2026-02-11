@@ -77,10 +77,10 @@ async def run_iteration(
             generate_outputs(prompt_b, train_samples, task_model, semaphore),
         )
         traj_a = build_instruction_trajectory(
-            outputs_a, train_samples, disc_config.show_target
+            outputs_a, train_samples, disc_config.show_expected
         )
         traj_b = build_instruction_trajectory(
-            outputs_b, train_samples, disc_config.show_target
+            outputs_b, train_samples, disc_config.show_expected
         )
     else:
         outputs_a, outputs_b = await asyncio.gather(
@@ -88,10 +88,10 @@ async def run_iteration(
             generate_standalone(prompt_b, task_model, semaphore),
         )
         traj_a = build_standalone_trajectory(
-            outputs_a, grader, disc_config.show_target, prompt_a.value
+            outputs_a, grader, disc_config.show_expected, prompt_a.value
         )
         traj_b = build_standalone_trajectory(
-            outputs_b, grader, disc_config.show_target, prompt_b.value
+            outputs_b, grader, disc_config.show_expected, prompt_b.value
         )
 
     # Step 2 — Discriminate (message-passing)
@@ -180,7 +180,7 @@ async def _score_prompt(
 ) -> GradeResult:
     """Score a prompt using the grader (mode-dependent sample passing)."""
     if mode == "standalone":
-        return await grader.grade(prompt, [], model_config, semaphore)
+        return await grader.grade(prompt, None, model_config, semaphore)
     return await grader.grade(prompt, samples, model_config, semaphore)
 
 
@@ -245,12 +245,12 @@ async def optimize_async(
         for p_text in config.pool.initial_prompts:
             if not p_text.strip():
                 raise ValueError("Standalone mode requires non-empty initial prompts")
-        # Validate grader.check_output() if show_target=True
-        if config.discriminator.show_target:
+        # Validate grader.check_output() if show_expected=True
+        if config.discriminator.show_expected:
             test_result = grader.check_output("test output", config.pool.initial_prompts[0])
             if test_result is None:
                 raise ValueError(
-                    "show_target=True requires grader.check_output() to return a dict. "
+                    "show_expected=True requires grader.check_output() to return a dict. "
                     "Override check_output() in your Grader subclass."
                 )
 

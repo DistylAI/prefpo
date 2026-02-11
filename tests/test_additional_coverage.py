@@ -81,7 +81,7 @@ def test_build_standalone_trajectory_passes_prompt_text():
             return {"ok": True}
 
     outputs = [ModelOutput(sample_index=-1, prompt_sent="p", response="hi")]
-    traj = build_standalone_trajectory(outputs, _Grader(), show_target=True, prompt_text="PROMPT")
+    traj = build_standalone_trajectory(outputs, _Grader(), show_expected=True, prompt_text="PROMPT")
     assert "Grade:" in traj
 def test_build_standalone_trajectory_requires_check_output():
     class _Grader:
@@ -90,7 +90,7 @@ def test_build_standalone_trajectory_requires_check_output():
 
     outputs = [ModelOutput(sample_index=-1, prompt_sent="p", response="hi")]
     with pytest.raises(ValueError):
-        build_standalone_trajectory(outputs, _Grader(), show_target=True, prompt_text="PROMPT")
+        build_standalone_trajectory(outputs, _Grader(), show_expected=True, prompt_text="PROMPT")
 def test_pool_score_cache_respects_role():
     pool = PromptPool([
         Prompt(value="same", role=PromptRole.USER),
@@ -116,7 +116,7 @@ async def test_optimize_standalone_requires_check_output(tmp_path):
     config = PrefPOConfig(
         mode="standalone",
         task_model={"name": "openai/gpt-4o"},
-        discriminator={"show_target": True},
+        discriminator={"show_expected": True},
         pool={"initial_prompts": ["test prompt"]},
         run={"iterations": 1, "output_dir": str(tmp_path)},
     )

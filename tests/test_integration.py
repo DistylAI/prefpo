@@ -101,7 +101,7 @@ TASK_CONSTRAINTS = {
 def _make_bbh_config(
     task: str,
     role: str,
-    show_target: bool,
+    show_expected: bool,
     strategy: str,
     iterations: int,
     output_dir: str,
@@ -118,7 +118,7 @@ def _make_bbh_config(
                 "is_reasoning": True,
                 "reasoning_effort": "medium",
             },
-            "show_target": show_target,
+            "show_expected": show_expected,
             "criteria": "correctness and quality of reasoning",
         },
         optimizer={
@@ -200,7 +200,7 @@ def test_output_dir(request):
 # ===========================================================================
 
 BBH_SHORT_PARAMS = [
-    # (task, role, show_target, strategy)
+    # (task, role, show_expected, strategy)
     ("disambiguation_qa", "user", True, "add"),
     ("disambiguation_qa", "user", False, "add"),
     ("disambiguation_qa", "system", True, "add"),
@@ -219,20 +219,20 @@ BBH_SHORT_IDS = [
     for task, role, show, strat in BBH_SHORT_PARAMS
 ]
 @pytest.mark.parametrize(
-    "task,role,show_target,strategy",
+    "task,role,show_expected,strategy",
     BBH_SHORT_PARAMS,
     ids=BBH_SHORT_IDS,
 )
-def test_bbh_short(task, role, show_target, strategy, test_output_dir):
-    """Short BBH: 2 iterations across task types, roles, show_target, strategies."""
+def test_bbh_short(task, role, show_expected, strategy, test_output_dir):
+    """Short BBH: 2 iterations across task types, roles, show_expected, strategies."""
     start = time.perf_counter()
-    test_id = f"bbh_short-{task}-{role}-target_{show_target}-{strategy}"
+    test_id = f"bbh_short-{task}-{role}-target_{show_expected}-{strategy}"
 
     try:
         train, val, _ = load_bbh(task, train_size=5, val_size=10, seed=42)
         grader = get_bbh_grader(task)
         config = _make_bbh_config(
-            task, role, show_target, strategy,
+            task, role, show_expected, strategy,
             iterations=2,
             output_dir=str(test_output_dir),
         )
@@ -365,14 +365,14 @@ def test_bbh_multi_trial_vary_seed(test_output_dir):
 # Group 2: Short IFEval Tests (2 iterations, n_eval_trials=1)
 # ===========================================================================
 @pytest.mark.parametrize(
-    "show_target",
+    "show_expected",
     [True, False],
     ids=["target_True", "target_False"],
 )
-def test_ifeval_short(show_target, test_output_dir):
+def test_ifeval_short(show_expected, test_output_dir):
     """Short IFEval: sample 5 (challenging subset), 2 iterations."""
     start = time.perf_counter()
-    test_id = f"ifeval_short-target_{show_target}"
+    test_id = f"ifeval_short-target_{show_expected}"
 
     try:
         sample = load_ifeval_sample(5)
@@ -380,7 +380,7 @@ def test_ifeval_short(show_target, test_output_dir):
         config.run.iterations = 2
         config.run.max_concurrent = 50
         config.run.output_dir = str(test_output_dir)
-        config.discriminator.show_target = show_target
+        config.discriminator.show_expected = show_expected
 
         result = asyncio.run(optimize(config, grader=grader))
     except Exception as e:
@@ -419,14 +419,14 @@ BBH_LONG_IDS = [
     for task, role, show, strat in BBH_LONG_PARAMS
 ]
 @pytest.mark.parametrize(
-    "task,role,show_target,strategy",
+    "task,role,show_expected,strategy",
     BBH_LONG_PARAMS,
     ids=BBH_LONG_IDS,
 )
-def test_bbh_long(task, role, show_target, strategy, test_output_dir):
+def test_bbh_long(task, role, show_expected, strategy, test_output_dir):
     """Long BBH: 10 iterations with test-set scoring for generalization."""
     start = time.perf_counter()
-    test_id = f"bbh_long-{task}-{role}-target_{show_target}-{strategy}"
+    test_id = f"bbh_long-{task}-{role}-target_{show_expected}-{strategy}"
 
     try:
         train, val, test_set = load_bbh(
@@ -434,7 +434,7 @@ def test_bbh_long(task, role, show_target, strategy, test_output_dir):
         )
         grader = get_bbh_grader(task)
         config = _make_bbh_config(
-            task, role, show_target, strategy,
+            task, role, show_expected, strategy,
             iterations=10,
             output_dir=str(test_output_dir),
         )

@@ -17,7 +17,7 @@ async def main():
     config = PrefPOConfig(
         mode="standalone",
         task_model={"name": "anthropic/claude-haiku-4-5-20251001"},
-        discriminator={"show_target": True},
+        discriminator={"show_expected": True},
         pool={"initial_prompts": ["placeholder"], "prompt_role": "user"},
         run={
             "iterations": 3,

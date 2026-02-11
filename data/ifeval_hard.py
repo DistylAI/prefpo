@@ -84,14 +84,14 @@ def build_ifeval_hard_config(
         config.mode = "standalone"
         config.pool.initial_prompts = [sample["prompt"]]
         config.pool.prompt_role = "user"
-        config.discriminator.show_target = True
+        config.discriminator.show_expected = True
         config.discriminator.criteria = sample["criteria"]
     else:
         config = PrefPOConfig(
             mode="standalone",
             task_model={"name": "openai/gpt-4o"},
             discriminator={
-                "show_target": True,
+                "show_expected": True,
                 "criteria": sample["criteria"],
             },
             pool={

@@ -118,7 +118,7 @@ class IFEvalGrader(Grader):
     async def grade(
         self,
         prompt: Prompt,
-        samples: list[Sample],
+        samples: list[Sample] | None,
         model_config: ModelConfig,
         semaphore: asyncio.Semaphore,
     ) -> GradeResult:

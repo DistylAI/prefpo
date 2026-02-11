@@ -182,7 +182,7 @@ discriminator:
     name: "openai/gpt-5"
     is_reasoning: true
     reasoning_effort: "medium"
-  show_target: true
+  show_expected: true
   criteria: "correctness and quality of reasoning"
 
 optimizer:
@@ -231,9 +231,9 @@ optimizer=OptimizerConfig(
 
 Criteria appear in the discriminator prompt as `CRITERIA TO EVALUATE ON`. Optimizer constraints appear as `CONSTRAINTS FOR YOUR OUTPUT`.
 
-### Ground Truth (`show_target`)
+### Expected Answers (`show_expected`)
 
-When `show_target=True`, the discriminator sees expected answers alongside model outputs. In instruction mode, this shows `Sample.target` for each question. In standalone mode, it calls `grader.check_output()` to annotate each output. This is a separate, lightweight method from `grade()` — it takes a single output string and returns a dict (e.g. `{"passed": True}`). The base class returns `None` by default, so you only need to implement it if you use `show_target=True` in standalone mode.
+When `show_expected=True`, the discriminator sees expected answers alongside model outputs. In instruction mode, this shows `Sample.target` for each question. In standalone mode, it calls `grader.check_output()` to annotate each output. This is a separate, lightweight method from `grade()` — it takes a single output string and returns a dict (e.g. `{"passed": True}`). The base class returns `None` by default, so you only need to implement it if you use `show_expected=True` in standalone mode.
 
 ### Prompt Role
 
@@ -243,6 +243,16 @@ When `show_target=True`, the discriminator sees expected answers alongside model
 - **`"system"`**: the instruction is sent as a separate system message, with the question as the user message
 
 Standalone mode requires `"user"` since the prompt is the entire user input.
+
+### Single-Prompt Pools
+
+PrefPO needs at least two prompts for pairwise comparison. If you provide only one initial prompt, PrefPO automatically generates a variant using the optimizer model (default: `openai/gpt-5`). The variant rewrites the prompt while preserving the same task and constraints — it appears in the pool as `variant_0`. This means you can start optimization with a single prompt:
+
+```python
+pool={"initial_prompts": ["Write a blog post about clean energy under 200 words."]}
+```
+
+The variant generator uses the discriminator's `criteria` to inform the rewrite, so setting good criteria helps produce a useful starting variant. If you want full control over both starting prompts, provide two explicitly.
 
 ### Pool Strategies
 
@@ -386,7 +396,7 @@ class MyInstructionGrader(Grader):
         return GradeResult(score=correct / len(outputs), n=len(outputs))
 ```
 
-**Standalone mode** — samples are not used. Use `generate_standalone()` to run the prompt directly and score the outputs:
+**Standalone mode** — `samples` is `None`. Use `generate_standalone()` to run the prompt directly and score the outputs:
 
 ```python
 from prefpo import Grader, GradeResult
@@ -400,9 +410,30 @@ class MyStandaloneGrader(Grader):
 
     def check_output(self, output, prompt_text=None):
         """Optional: annotate individual outputs for standalone trajectories.
-        Called when show_target=True. Return a dict or None."""
+        Called when show_expected=True. Return a dict or None."""
         return {"passed": len(output.split()) < 200}
 ```
+
+**LLM-as-judge grader** — use `call_llm` or `call_llm_json` inside `grade()` when you want an LLM to evaluate responses instead of programmatic checks:
+
+```python
+from prefpo import Grader, GradeResult, call_llm
+from prefpo.generate import generate_outputs
+
+class LLMJudgeGrader(Grader):
+    async def grade(self, prompt, samples, model_config, semaphore):
+        outputs = await generate_outputs(prompt, samples, model_config, semaphore)
+        score = 0
+        for o, s in zip(outputs, samples):
+            resp = await call_llm(
+                model="openai/gpt-4o",
+                messages=[{"role": "user", "content": f"Question: {s.question}\nExpected: {s.target}\nResponse: {o.response}\n\nScore 0 or 1:"}],
+            )
+            score += int("1" in resp.output_text)
+        return GradeResult(score=score / len(outputs), n=len(outputs))
+```
+
+`call_llm` returns a litellm response object (with `.output_text`). For structured JSON output, use `call_llm_json` with a JSON schema — see [`examples/ifeval_hard_llm_judge.py`](examples/ifeval_hard_llm_judge.py) for a full example.
 
 ## API Reference
 
@@ -415,7 +446,7 @@ All public symbols are exported from the top-level `prefpo` package.
 | `optimize_multi_trial(config, grader, ...)` | Run multiple independent trials in parallel |
 | `PrefPOConfig` | Top-level configuration (mode, models, pool, run settings) |
 | `ModelConfig` | Model name, temperature, reasoning settings |
-| `DiscriminatorConfig` | Judge model, criteria, constraints, show_target |
+| `DiscriminatorConfig` | Judge model, criteria, constraints, show_expected |
 | `OptimizerConfig` | Optimizer model and constraints |
 | `OptimizationResult` | Result with best_prompt, best_score, history, total_tokens |
 | `MultiTrialResult` | Aggregated results across trials (mean, std, per-trial data) |

@@ -9,7 +9,7 @@ discriminator:
     name: "openai/gpt-5"
     is_reasoning: true
     reasoning_effort: "medium"
-  show_target: true
+  show_expected: true
   # criteria populated per-sample by build_ifeval_config()
 
 optimizer:

@@ -194,7 +194,7 @@ async def test_run_iteration_all_anthropic():
         train_samples=train,
         grader=grader,
         task_model=anthropic_model,
-        disc_config=DiscriminatorConfig(model=anthropic_model, show_target=True),
+        disc_config=DiscriminatorConfig(model=anthropic_model, show_expected=True),
         opt_config=OptimizerConfig(model=anthropic_model),
         iteration_index=0,
         semaphore=asyncio.Semaphore(10),

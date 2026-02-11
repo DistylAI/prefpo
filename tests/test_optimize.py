@@ -114,7 +114,7 @@ async def test_optimize_standalone_mode():
         config = PrefPOConfig(
             mode="standalone",
             task_model={"name": "openai/gpt-4o"},
-            discriminator={"show_target": True, "criteria": ["test criterion"]},
+            discriminator={"show_expected": True, "criteria": ["test criterion"]},
             pool={"initial_prompts": ["Write a poem", "Write a nice poem"]},
             run={"iterations": 1, "max_concurrent": 10, "output_dir": tmpdir},
         )

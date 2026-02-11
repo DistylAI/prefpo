@@ -31,7 +31,7 @@ class Grader(ABC):
     async def grade(
         self,
         prompt: Prompt,
-        samples: list[Sample],
+        samples: list[Sample] | None,
         model_config: ModelConfig,
         semaphore: asyncio.Semaphore,
     ) -> GradeResult:
@@ -39,7 +39,7 @@ class Grader(ABC):
 
         Args:
             prompt: The prompt to evaluate.
-            samples: Evaluation samples (empty list in standalone mode).
+            samples: Evaluation samples. None in standalone mode.
             model_config: Task model config.
             semaphore: Shared concurrency semaphore.
         """
@@ -52,7 +52,7 @@ class Grader(ABC):
     ) -> dict | None:
         """Lightweight per-output annotation for standalone trajectory building.
 
-        Called by build_standalone_trajectory() when show_target=True.
+        Called by build_standalone_trajectory() when show_expected=True.
         prompt_text is the prompt used to produce the output.
         Returns a dict of annotation fields or None if no annotation available.
         Default: returns None. Subclasses override to provide grading logic.

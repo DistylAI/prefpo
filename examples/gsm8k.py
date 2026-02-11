@@ -122,9 +122,9 @@ if __name__ == "__main__":
         task_model={"name": "openai/gpt-4o"},
 
         discriminator={
-            # show_target=True lets the judge see ground-truth answers alongside outputs.
+            # show_expected=True lets the judge see ground-truth answers alongside outputs.
             # Set False for subjective tasks with no single right answer.
-            "show_target": True,
+            "show_expected": True,
             # criteria: what the judge optimizes for (string or list of strings)
             "criteria": "correctness of the final numerical answer",
         },

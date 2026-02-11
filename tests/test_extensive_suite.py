@@ -29,7 +29,7 @@ pytestmark = pytest.mark.live
 class Case:
     name: str
     mode: Literal["instruction", "standalone"]
-    show_target: bool
+    show_expected: bool
     prompt_role: Literal["user", "system"] | None = None
     update_strategy: Literal["add", "replace"] | None = None
     bbh_subset: str | None = None
@@ -111,7 +111,7 @@ def _build_instruction_config(case: Case, output_dir: Path) -> tuple[PrefPOConfi
         task_model={"name": "gpt-4o", "temperature": 0.0},
         discriminator={
             "model": {"name": "gpt-5", "is_reasoning": True, "reasoning_effort": "medium"},
-            "show_target": case.show_target,
+            "show_expected": case.show_expected,
             "criteria": "correctness and adherence to output format",
         },
         optimizer={
@@ -147,7 +147,7 @@ def _build_ifeval_config(case: Case, output_dir: Path) -> tuple[PrefPOConfig, ob
         base_config=base_config,
         n_eval_trials=case.n_eval_trials or 3,
     )
-    config.discriminator.show_target = case.show_target
+    config.discriminator.show_expected = case.show_expected
     config.run.iterations = case.iterations
     config.run.max_concurrent = 50
     config.run.output_dir = str(output_dir)
@@ -170,7 +170,7 @@ async def test_extensive_suite():
         Case(
             name="instr_mc_user_no_gt_add",
             mode="instruction",
-            show_target=False,
+            show_expected=False,
             prompt_role="user",
             update_strategy="add",
             bbh_subset="disambiguation_qa",
@@ -182,7 +182,7 @@ async def test_extensive_suite():
         Case(
             name="instr_mc_user_gt_add",
             mode="instruction",
-            show_target=True,
+            show_expected=True,
             prompt_role="user",
             update_strategy="add",
             bbh_subset="disambiguation_qa",
@@ -194,7 +194,7 @@ async def test_extensive_suite():
         Case(
             name="instr_mc_system_gt_add",
             mode="instruction",
-            show_target=True,
+            show_expected=True,
             prompt_role="system",
             update_strategy="add",
             bbh_subset="disambiguation_qa",
@@ -206,7 +206,7 @@ async def test_extensive_suite():
         Case(
             name="instr_mc_user_gt_replace",
             mode="instruction",
-            show_target=True,
+            show_expected=True,
             prompt_role="user",
             update_strategy="replace",
             bbh_subset="disambiguation_qa",
@@ -218,7 +218,7 @@ async def test_extensive_suite():
         Case(
             name="instr_binary_user_gt_add",
             mode="instruction",
-            show_target=True,
+            show_expected=True,
             prompt_role="user",
             update_strategy="add",
             bbh_subset="navigate",
@@ -230,7 +230,7 @@ async def test_extensive_suite():
         Case(
             name="instr_exact_system_gt_add",
             mode="instruction",
-            show_target=True,
+            show_expected=True,
             prompt_role="system",
             update_strategy="add",
             bbh_subset="object_counting",
@@ -246,7 +246,7 @@ async def test_extensive_suite():
             Case(
                 name=f"ifeval_{idx}_no_gt",
                 mode="standalone",
-                show_target=False,
+                show_expected=False,
                 ifeval_idx=idx,
                 iterations=1,
                 n_eval_trials=3,
@@ -258,7 +258,7 @@ async def test_extensive_suite():
             Case(
                 name=f"ifeval_{idx}_gt",
                 mode="standalone",
-                show_target=True,
+                show_expected=True,
                 ifeval_idx=idx,
                 iterations=1,
                 n_eval_trials=3,
@@ -269,7 +269,7 @@ async def test_extensive_suite():
         Case(
             name="instr_mc_user_gt_add_iter10",
             mode="instruction",
-            show_target=True,
+            show_expected=True,
             prompt_role="user",
             update_strategy="add",
             bbh_subset="disambiguation_qa",
@@ -283,7 +283,7 @@ async def test_extensive_suite():
         Case(
             name=f"ifeval_{ifeval_indices[0]}_gt_iter10",
             mode="standalone",
-            show_target=True,
+            show_expected=True,
             ifeval_idx=ifeval_indices[0],
             iterations=10,
             n_eval_trials=5,

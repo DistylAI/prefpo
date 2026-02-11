@@ -112,7 +112,7 @@ async def test_run_iteration_standalone_mode(semaphore):
             train_samples=None,
             grader=mock_grader,
             task_model=ModelConfig(name="openai/gpt-4o"),
-            disc_config=DiscriminatorConfig(show_target=True),
+            disc_config=DiscriminatorConfig(show_expected=True),
             opt_config=OptimizerConfig(),
             iteration_index=3,
             semaphore=semaphore,

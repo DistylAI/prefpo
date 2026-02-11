@@ -27,7 +27,7 @@ def test_discriminator_config_defaults():
     assert dc.model.is_reasoning is True
     assert dc.criteria == ""
     assert dc.constraints == ""
-    assert dc.show_target is False
+    assert dc.show_expected is False
 def test_discriminator_config_list_criteria():
     dc = DiscriminatorConfig(criteria=["accuracy", "reasoning"])
     assert dc.criteria == ["accuracy", "reasoning"]

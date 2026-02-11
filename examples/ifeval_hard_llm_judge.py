@@ -76,7 +76,7 @@ class LLMJudgeGrader(Grader):
     async def grade(
         self,
         prompt: Prompt,
-        samples: list[Sample],
+        samples: list[Sample] | None,
         model_config: ModelConfig,
         semaphore: asyncio.Semaphore,
     ) -> GradeResult:
@@ -129,7 +129,7 @@ class LLMJudgeGrader(Grader):
         return GradeResult(score=float(score), n=1, per_sample=per_sample, outputs=raw_outputs)
 
     def check_output(self, output: str, prompt_text: str | None = None) -> dict | None:
-        """Synchronous annotation for show_target — not available with LLM judge.
+        """Synchronous annotation for show_expected — not available with LLM judge.
 
         check_output() must be synchronous, so we can't call the LLM here.
         Return None to skip trajectory annotation. The optimization loop
@@ -147,13 +147,13 @@ if __name__ == "__main__":
     for c in sample["criteria"]:
         print(f"  - {c}")
 
-    # Build a standalone config. Note: show_target is False here because
+    # Build a standalone config. Note: show_expected is False here because
     # LLMJudgeGrader.check_output() returns None (can't call LLM synchronously).
     config = PrefPOConfig(
         mode="standalone",
         task_model={"name": "openai/gpt-4o"},
         discriminator={
-            "show_target": False,
+            "show_expected": False,
             "criteria": sample["criteria"],
         },
         pool={

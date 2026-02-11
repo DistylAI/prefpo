@@ -32,14 +32,14 @@ def _format_constraints_block(constraints: str | list[str]) -> str:
 def build_instruction_trajectory(
     outputs: list[ModelOutput],
     samples: list[Sample],
-    show_target: bool,
+    show_expected: bool,
 ) -> str:
     """Build trajectory for instruction mode.
 
     Format per sample:
         Question: {sample.question}
         Response: {output.response}
-        Expected Answer: {sample.target}   # Only if show_target=True
+        Expected Answer: {sample.target}   # Only if show_expected=True
     """
     sample_map = {s.index: s for s in samples}
     lines: list[str] = []
@@ -48,7 +48,7 @@ def build_instruction_trajectory(
         lines.append(f"--- Sample {i + 1} ---")
         lines.append(f"Question:\n{sample.question}")
         lines.append(f"Response:\n{output.response}")
-        if show_target:
+        if show_expected:
             lines.append(f"Expected Answer:\n{sample.target}")
     return "\n".join(lines)
 
@@ -56,26 +56,26 @@ def build_instruction_trajectory(
 def build_standalone_trajectory(
     outputs: list[ModelOutput],
     grader: Grader,
-    show_target: bool,
+    show_expected: bool,
     prompt_text: str | None = None,
 ) -> str:
     """Build trajectory for standalone mode.
 
     Format per output:
         Output: {output.response}
-        Grade: {grader.check_output(output.response, prompt_text)}  # Only if show_target=True
+        Grade: {grader.check_output(output.response, prompt_text)}  # Only if show_expected=True
 
-    Raises ValueError if show_target=True and check_output() returns None.
+    Raises ValueError if show_expected=True and check_output() returns None.
     """
     lines: list[str] = []
     for i, output in enumerate(outputs):
         lines.append(f"--- Output {i + 1} ---")
         lines.append(f"Output:\n{output.response}")
-        if show_target:
+        if show_expected:
             annotation = grader.check_output(output.response, prompt_text)
             if annotation is None:
                 raise ValueError(
-                    "show_target=True requires grader.check_output() to return "
+                    "show_expected=True requires grader.check_output() to return "
                     "a dict, but it returned None. Override check_output() in "
                     "your Grader subclass."
                 )

@@ -85,7 +85,7 @@ def test_build_ifeval_config_no_base():
     config, grader = build_ifeval_config(sample)
     assert config.mode == "standalone"
     assert config.pool.prompt_role == "user"
-    assert config.discriminator.show_target is True
+    assert config.discriminator.show_expected is True
     assert isinstance(grader, IFEvalGrader)
 def test_build_ifeval_config_with_base():
     """Overrides base config fields."""
@@ -101,14 +101,14 @@ def test_build_ifeval_config_with_base():
     assert config.task_model.name == "gpt-4o-mini"
     assert config.run.iterations == 3
     assert config.pool.initial_prompts == [sample["prompt"]]
-def test_build_ifeval_config_sets_show_target():
-    """Always sets show_target=True."""
+def test_build_ifeval_config_sets_show_expected():
+    """Always sets show_expected=True."""
     sample = load_ifeval_sample(0)
     base = PrefPOConfig(
         mode="standalone",
         task_model={"name": "openai/gpt-4o"},
-        discriminator={"show_target": False},
+        discriminator={"show_expected": False},
         pool={"initial_prompts": ["placeholder"]},
     )
     config, _ = build_ifeval_config(sample, base_config=base)
-    assert config.discriminator.show_target is True
+    assert config.discriminator.show_expected is True
