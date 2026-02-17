@@ -95,7 +95,7 @@ async def run_iteration(
         )
 
     # Step 2 — Discriminate (message-passing)
-    sys_prompt, user_prompt = build_discriminator_prompt(traj_a, traj_b, disc_config)
+    sys_prompt, user_prompt = build_discriminator_prompt(traj_a, traj_b, disc_config, mode)
     disc_output, disc_messages, disc_response = await call_discriminator_with_messages(
         model=disc_config.model.name,
         messages=[

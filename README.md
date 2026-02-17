@@ -2,10 +2,10 @@
 
 Lightweight, preference-based prompt optimization. Give PrefPO a pool of prompt candidates and a grader — it iteratively improves them using LLM-as-judge feedback (no need to label data).
 
-- **Two optimization modes**: instruction (shared prompt + data samples) and standalone (prompt-is-the-task, no samples needed)
+- **Two optimization modes**: instruction (shared prompt + input samples) and standalone (prompt-is-the-task, no samples needed)
 - **Low-data**: works with small datasets that don't need to be labeled; standalone mode needs no dataset
 - **Text evaluation signal**: discriminator criteria are plain text, so you can start optimizing quickly
-- **Minimal surface area**: one entry point (`optimize()`), one abstraction to implement (`Grader`)
+- **Minimal setup required**: one entry point (`optimize()`), one abstraction to implement (`Grader`)
 - **Fast**: all LLM calls run concurrently via `asyncio.gather` with a shared semaphore
 
 ## How It Works
@@ -15,7 +15,7 @@ PrefPO implements the PRPO (Preference-based Prompt Optimization) loop:
 1. **Sample** two prompts from a pool
 2. **Generate** outputs from both using the task model
 3. **Discriminate** — an LLM judge picks the better prompt and explains why
-4. **Optimize** — a second LLM call improves the losing prompt using the judge's feedback
+4. **Optimize** — a second LLM call improves the losing prompt using the discriminator's feedback
 5. **Evaluate** the new prompt with your grader, add it to the pool, repeat
 6. **Select** — after all iterations, return the prompt with the highest grader score
 
@@ -43,7 +43,7 @@ Requires Python 3.11+. Set the API key for your provider as an environment varia
 > | Discriminator | `openai/gpt-5` (reasoning) | Compares prompt pairs and picks the better one |
 > | Optimizer | `openai/gpt-5` (reasoning) | Rewrites the losing prompt using judge feedback |
 >
-> The discriminator and optimizer require structured JSON output via JSON schema mode. OpenAI, Anthropic (Claude 3.5+), and Gemini (2.0+) all enforce this natively and are fully supported. Other providers may vary — check [litellm's structured output docs](https://docs.litellm.ai/docs/completion/json_mode) for the full list. The task model has no such restriction — it can be any litellm-supported provider.
+> The discriminator and optimizer require structured JSON output via JSON schema mode. OpenAI, Anthropic (Claude 3.5+), and Gemini (2.0+) all enforce this natively and are fully supported. Other providers may vary — check [litellm's structured output docs](https://docs.litellm.ai/docs/completion/json_mode) for how to check if there is support. The task model has no such restriction — it can be any litellm-supported provider.
 
 ## Quick Start — Instruction Mode
 
@@ -110,7 +110,7 @@ result = optimize(config, grader=LLMJudgeGrader(), train=train)
 
 ## Quick Start — Standalone Mode
 
-Standalone mode optimizes prompts where the prompt itself is the task (e.g. "Write a 300+ word summary on..." or "Create a blog post about..."). No dataset is needed — just a prompt, a grader, and criteria are enough to run optimization. Your grader scores each prompt directly by generating outputs and evaluating them, and the highest-scoring prompt is returned. Use this for tasks like instruction-following (IFEval) where each prompt has its own success criteria. Note: your grader can also be an LLM-judge when the evaluation criteria are nuanced and can't be checked programmatically.
+Standalone mode optimizes prompts where the prompt itself is the task (e.g. "Write a 300+ word summary on..." or "Create a blog post about..."). No dataset is needed — just a prompt, a grader, and criteria are enough to run optimization. Your grader scores each prompt directly by generating outputs and evaluating them, and the highest-scoring prompt is returned. Use this for tasks like instruction-following (IFEval/IFEval-Hard) where each prompt has its own success criteria. Note: your grader can also be an LLM-judge when the evaluation criteria are nuanced and can't be checked programmatically.
 
 ```python
 from prefpo import PrefPOConfig, Grader, GradeResult, optimize
@@ -233,7 +233,7 @@ config = PrefPOConfig.from_yaml("config.yaml")
 
 ### Criteria, Additional Info, and Constraints
 
-**Discriminator criteria** tell the judge what to evaluate on. **Additional info** gives the discriminator extra context to make better judgements — this can be constraints, background knowledge, domain-specific rules, or anything else that helps the judge compare prompts more accurately. **Optimizer constraints** are rules the optimizer must follow when rewriting prompts. All three accept a string or list of strings.
+**Discriminator criteria** tell the judge what to evaluate on. **Additional info** gives the discriminator extra context to make better judgements — this can be constraints, background knowledge, domain-specific rules, or anything else that helps the judge compare outputs more accurately. **Optimizer constraints** are rules the optimizer must follow when rewriting prompts. All three accept a string or list of strings.
 
 ```python
 discriminator=DiscriminatorConfig(
@@ -250,13 +250,23 @@ optimizer=OptimizerConfig(
 
 Criteria appear in the discriminator prompt as `CRITERIA TO EVALUATE ON`. Additional info appears as `ADDITIONAL INFORMATION`. Optimizer constraints appear as `CONSTRAINTS FOR YOUR OUTPUT`.
 
+Optimizer constraints are useful for preventing the optimizer from drifting. For example, the PrefPO-Minimal variant from our original paper constrains the optimizer to make only targeted, feedback-driven changes:
+
+```python
+optimizer=OptimizerConfig(
+    constraints=[
+        "Make minimal, targeted changes — do not add instructions that aren't directly supported by the feedback",
+    ],
+)
+```
+
 ### Expected Answers (`show_expected`)
 
-When `show_expected=True`, the discriminator sees expected answers alongside model outputs. In instruction mode, this shows `Sample.target` for each question. In standalone mode, it calls `grader.check_output()` to annotate each output. This is a separate, lightweight method from `grade()` — it takes a single output string and returns a dict (e.g. `{"passed": True}`). The base class returns `None` by default, so you only need to implement it if you use `show_expected=True` in standalone mode.
+When `show_expected=True`, the discriminator sees expected answers alongside model outputs. In instruction mode, this shows `Sample.target` for each question. In standalone mode, it calls `grader.check_output()` to annotate each output. This is a separate, lightweight method from `grade()` — it takes a single output string and returns a dict (e.g. `{"passed": True}`). The base class returns `None` by default, so you only need to implement it if you use `show_expected=True` in standalone mode. The idea is that the discriminator can use this information to make better judgements.
 
 ### Prompt Role
 
-`prompt_role` controls how the prompt is sent to the task model:
+`prompt_role` controls what prompt we are optimizing:
 
 - **`"user"`** (default): the instruction is prepended to the question in a single user message
 - **`"system"`**: the instruction is sent as a separate system message, with the question as the user message

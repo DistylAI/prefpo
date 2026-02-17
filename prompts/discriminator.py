@@ -14,7 +14,7 @@ def _format_criteria_block(criteria: str | list[str]) -> str:
     else:
         items = criteria
     bullets = "\n".join(f"- {item}" for item in items)
-    return f"\nCRITERIA TO EVALUATE ON:\n{bullets}\n"
+    return f"\n<Criteria to Evaluate On>\n{bullets}\n</Criteria to Evaluate On>"
 
 
 def _format_additional_info_block(additional_info: str | list[str]) -> str:
@@ -26,7 +26,7 @@ def _format_additional_info_block(additional_info: str | list[str]) -> str:
     else:
         items = additional_info
     bullets = "\n".join(f"- {item}" for item in items)
-    return f"\nADDITIONAL INFORMATION:\n{bullets}\n"
+    return f"\n<Additional Information>\n{bullets}\n</Additional Information>"
 
 
 def build_instruction_trajectory(
@@ -79,7 +79,7 @@ def build_standalone_trajectory(
                     "a dict, but it returned None. Override check_output() in "
                     "your Grader subclass."
                 )
-            lines.append(f"Grade: {annotation}")
+            lines.append(f"Grade:\n{annotation}")
     return "\n".join(lines)
 
 
@@ -87,15 +87,28 @@ def build_discriminator_prompt(
     trajectory_a: str,
     trajectory_b: str,
     config: DiscriminatorConfig,
+    mode: str = "instruction",
 ) -> tuple[str, str]:
     """Returns (system_prompt, user_prompt) for the discriminator.
 
     The system prompt is a short role description. call_llm() handles
     the system -> developer mapping for reasoning models internally.
     """
+    if mode == "instruction":
+        mode_detail = (
+            " For each sample, you will see the question, the model's "
+            "response, and optionally the expected answer."
+        )
+    else:
+        mode_detail = (
+            " You will see the model's output and "
+            "optionally a grade from an automated checker."
+        )
+
     system_prompt = (
         "You are an evaluator of LLMs. You will be given examples of outputs "
-        "from the same LLM with two different instructions. You must choose "
+        "from the same LLM with two different instructions."
+        f"{mode_detail} You must choose "
         "the version you prefer, based off of the evaluation criteria provided. "
         "Then provide feedback about why you chose that one "
         "and what can be improved about the one you didn't choose. Then, you will "
@@ -107,26 +120,26 @@ def build_discriminator_prompt(
     parts.append(f"<Version 1>\n{trajectory_a}\n</Version 1>")
     parts.append(f"\n<Version 2>\n{trajectory_b}\n</Version 2>")
 
-    criteria_block = _format_criteria_block(config.criteria)
-    if criteria_block:
-        parts.append(criteria_block)
-
     info_block = _format_additional_info_block(config.additional_info)
     if info_block:
         parts.append(info_block)
 
+    criteria_block = _format_criteria_block(config.criteria)
+    if criteria_block:
+        parts.append(criteria_block)
+
     parts.append(
-        "\n<Task>Be very smart, logical, and critical. Just provide concise "
+        "\n<Task>\nBe very smart, logical, and critical. Just provide concise "
         "feedback. First do your best to reason about what "
         "is the ideal behavior given the evaluation criteria and choose the responses that align most with "
         "this. Then, provide clear, generalizable feedback that doesn't rely on "
         "the specific responses, instead discuss why you chose that one "
-        "and what can be improved about the one you didn't choose.</Task>"
+        "and what can be improved about the one you didn't choose.\n</Task>"
     )
 
     parts.append(
-        '\n<Output>The output should be a JSON object with the following fields: '
-        '"preferred": 1 or 2, "feedback": string.</Output>'
+        '\n<Output>\nThe output should be a JSON object with the following fields: '
+        '"preferred": 1 or 2, "feedback": string.\n</Output>'
     )
 
     user_prompt = "\n".join(parts)
