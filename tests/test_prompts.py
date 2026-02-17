@@ -48,7 +48,7 @@ def test_discriminator_prompt_basic():
 def test_discriminator_prompt_criteria_string():
     cfg = DiscriminatorConfig(criteria="correctness")
     _, user_p = build_discriminator_prompt("a", "b", cfg)
-    assert "CRITERIA TO EVALUATE ON:" in user_p
+    assert "<Criteria to Evaluate On>" in user_p
     assert "- correctness" in user_p
 def test_discriminator_prompt_criteria_list():
     cfg = DiscriminatorConfig(criteria=["accuracy", "reasoning quality"])
@@ -58,14 +58,14 @@ def test_discriminator_prompt_criteria_list():
 def test_discriminator_prompt_additional_info():
     cfg = DiscriminatorConfig(additional_info=["be concise", "no jargon"])
     _, user_p = build_discriminator_prompt("a", "b", cfg)
-    assert "ADDITIONAL INFORMATION:" in user_p
+    assert "<Additional Information>" in user_p
     assert "- be concise" in user_p
     assert "- no jargon" in user_p
 def test_discriminator_prompt_no_criteria_no_block():
     cfg = DiscriminatorConfig(criteria="", additional_info="")
     _, user_p = build_discriminator_prompt("a", "b", cfg)
-    assert "CRITERIA TO EVALUATE ON:" not in user_p
-    assert "ADDITIONAL INFORMATION:" not in user_p
+    assert "<Criteria to Evaluate On>" not in user_p
+    assert "<Additional Information>" not in user_p
 def test_discriminator_schema_structure():
     assert DISCRIMINATOR_SCHEMA["type"] == "json_schema"
     assert DISCRIMINATOR_SCHEMA["schema"]["properties"]["preferred"]["enum"] == [1, 2]
@@ -75,24 +75,26 @@ def test_optimizer_prompt_preferred_1():
     p = Prompt(value="bad instruction", role=PromptRole.USER)
     cfg = OptimizerConfig()
     prompt = build_optimizer_prompt(preferred=1, non_preferred_prompt=p, feedback="needs work", config=cfg)
-    assert "Version 2 Instruction: bad instruction" in prompt
+    assert "bad instruction" in prompt
+    assert "<Non-Preferred Instruction>" in prompt
     assert "needs work" in prompt
 def test_optimizer_prompt_preferred_2():
     p = Prompt(value="bad instruction", role=PromptRole.USER)
     cfg = OptimizerConfig()
     prompt = build_optimizer_prompt(preferred=2, non_preferred_prompt=p, feedback="needs work", config=cfg)
-    assert "Version 1 Instruction: bad instruction" in prompt
+    assert "bad instruction" in prompt
+    assert "<Non-Preferred Instruction>" in prompt
 def test_optimizer_prompt_constraints():
     p = Prompt(value="x", role=PromptRole.USER)
     cfg = OptimizerConfig(constraints="keep format rules")
     prompt = build_optimizer_prompt(preferred=1, non_preferred_prompt=p, feedback="f", config=cfg)
-    assert "CONSTRAINTS FOR YOUR OUTPUT:" in prompt
+    assert "<Constraints for Your Output>" in prompt
     assert "- keep format rules" in prompt
 def test_optimizer_prompt_no_constraints():
     p = Prompt(value="x", role=PromptRole.USER)
     cfg = OptimizerConfig(constraints="")
     prompt = build_optimizer_prompt(preferred=1, non_preferred_prompt=p, feedback="f", config=cfg)
-    assert "CONSTRAINTS FOR YOUR OUTPUT:" not in prompt
+    assert "<Constraints for Your Output>" not in prompt
 def test_optimizer_schema_structure():
     assert OPTIMIZER_SCHEMA["type"] == "json_schema"
     assert "prompt" in OPTIMIZER_SCHEMA["schema"]["properties"]
@@ -144,13 +146,13 @@ def test_optimizer_prompt_empty_feedback():
     p = Prompt(value="instruction", role=PromptRole.USER)
     cfg = OptimizerConfig()
     prompt = build_optimizer_prompt(preferred=1, non_preferred_prompt=p, feedback="", config=cfg)
-    assert "Feedback:" in prompt
+    assert "<Feedback>" in prompt
 def test_optimizer_prompt_empty_prompt_value():
     """prompt.value="" is passed through."""
     p = Prompt(value="", role=PromptRole.USER)
     cfg = OptimizerConfig()
     prompt = build_optimizer_prompt(preferred=1, non_preferred_prompt=p, feedback="fix it", config=cfg)
-    assert "Version 2 Instruction: " in prompt
+    assert "<Non-Preferred Instruction>" in prompt
 def test_format_criteria_block_empty_list():
     """Empty list returns empty string."""
     assert _format_criteria_block([]) == ""
@@ -159,4 +161,4 @@ def test_format_additional_info_block_single_string():
     """Single string becomes one bullet."""
     result = _format_additional_info_block("be concise")
     assert "- be concise" in result
-    assert "ADDITIONAL INFORMATION:" in result
+    assert "<Additional Information>" in result
