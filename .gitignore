@@ -13,6 +13,7 @@ tests/output/
 .claude/
 .vscode/
 .idea/
+.venv/
 
 # Dev artifacts (not part of the public release)
 internal_testing/

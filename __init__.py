@@ -1,16 +1,16 @@
 """PrefPO — Preference-based Prompt Optimization."""
 
-import asyncio
-
 from prefpo.config import (
     DiscriminatorConfig,
     ModelConfig,
     OptimizerConfig,
     PrefPOConfig,
 )
-from prefpo.generate import generate_outputs
+from prefpo.generate import generate_outputs, generate_standalone
 from prefpo.grading.base import GradeResult, Grader
-from prefpo.llm.client import call_llm
+from prefpo.judges.hack import judge_prompt_hack
+from prefpo.judges.hygiene import judge_prompt_hygiene
+from prefpo.llm.client import LLMResponse, call_llm, call_llm_json
 from prefpo.optimize import (
     MultiTrialResult,
     OptimizationResult,
@@ -36,5 +36,10 @@ __all__ = [
     "Grader",
     "GradeResult",
     "generate_outputs",
+    "generate_standalone",
     "call_llm",
+    "call_llm_json",
+    "LLMResponse",
+    "judge_prompt_hack",
+    "judge_prompt_hygiene",
 ]

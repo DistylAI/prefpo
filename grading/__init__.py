@@ -4,7 +4,6 @@ from prefpo.data.bbh import BINARY_TASKS, EXACT_MATCH_TASKS, MULTIPLE_CHOICE_TAS
 from prefpo.grading.base import GradeResult, Grader
 from prefpo.grading.binary import BinaryGrader
 from prefpo.grading.exact_match import ExactMatchGrader
-from prefpo.grading.ifeval import IFEvalGrader
 from prefpo.grading.multiple_choice import MultipleChoiceGrader
 
 
@@ -28,6 +27,5 @@ __all__ = [
     "MultipleChoiceGrader",
     "BinaryGrader",
     "ExactMatchGrader",
-    "IFEvalGrader",
     "get_bbh_grader",
 ]

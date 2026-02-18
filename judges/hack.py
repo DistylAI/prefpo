@@ -2,8 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Any
-
 import yaml
 
 from prefpo.llm.client import call_llm_json
