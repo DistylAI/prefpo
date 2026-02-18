@@ -162,7 +162,7 @@ async def test_call_llm_raises_after_max_retries():
                     messages=[{"role": "user", "content": "hi"}],
                     max_retries=2,
                 )
-    assert mock_aresponses.call_count == 2
+    assert mock_aresponses.call_count == 3  # 1 initial + 2 retries
 # --- call_llm_json ---
 @pytest.mark.asyncio
 async def test_call_llm_json_retries_parse_failure():

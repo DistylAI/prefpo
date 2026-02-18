@@ -115,7 +115,7 @@ async def call_llm(
         reasoning_effort: Reasoning effort level for reasoning models.
         temperature: Temperature for non-reasoning models (ignored for reasoning).
         json_schema: JSON schema dict for structured output.
-        max_retries: Max retry attempts on transient errors.
+        max_retries: Number of retries after the initial attempt on transient errors.
 
     Returns:
         LLMResponse with output_text, id, and usage fields.
@@ -139,7 +139,7 @@ async def call_llm(
         kwargs["temperature"] = temperature
 
     last_error: Exception | None = None
-    for attempt in range(max_retries):
+    for attempt in range(1 + max_retries):
         try:
             response = await litellm.aresponses(**kwargs)
             return LLMResponse(
@@ -153,7 +153,7 @@ async def call_llm(
             logger.warning(
                 "call_llm attempt %d/%d failed: %s. Retrying in %ds...",
                 attempt + 1,
-                max_retries,
+                1 + max_retries,
                 e,
                 wait,
             )

@@ -24,6 +24,11 @@ def test_all_exports_complete():
         "Grader",
         "GradeResult",
         "generate_outputs",
+        "generate_standalone",
         "call_llm",
+        "call_llm_json",
+        "LLMResponse",
+        "judge_prompt_hack",
+        "judge_prompt_hygiene",
     }
     assert set(prefpo.__all__) == expected

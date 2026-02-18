@@ -5,7 +5,7 @@ import json
 import logging
 import statistics
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -115,7 +115,7 @@ async def run_ifeval_batch(
             pool={"initial_prompts": ["placeholder"], "prompt_role": "user"},
         )
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     batch_dir = Path(base_config.run.output_dir) / f"batch_{timestamp}"
     base_config.run.output_dir = str(batch_dir)
 

@@ -36,6 +36,8 @@ class ExactMatchGrader(Grader):
         model_config: ModelConfig,
         semaphore: asyncio.Semaphore,
     ) -> GradeResult:
+        if samples is None:
+            raise ValueError("ExactMatchGrader requires samples (instruction mode only)")
         # Validate all samples have targets
         for s in samples:
             if not s.target:

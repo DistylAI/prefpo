@@ -235,10 +235,10 @@ async def optimize_async(
 
     # --- Input validation ---
     if config.mode == "instruction":
-        if not train:
+        if train is None or len(train) == 0:
             raise ValueError("Instruction mode requires train samples")
     elif config.mode == "standalone":
-        if train or val or test:
+        if train is not None or val is not None or test is not None:
             raise ValueError("Standalone mode does not accept train/val/test")
         if config.pool.prompt_role != "user":
             raise ValueError("Standalone mode requires prompt_role='user'")
@@ -282,7 +282,7 @@ async def optimize_async(
         pool.add(Prompt(value=variant_text, role=role, name="variant_0"))
 
     # Determine scoring samples
-    scoring_samples = val if val else train
+    scoring_samples = val if val is not None else train
 
     history: list[IterationRecord] = []
     total_disc_tokens = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}

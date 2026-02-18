@@ -27,7 +27,7 @@ def build_optimizer_prompt(
     No system prompt — the optimizer chains via previous_response_id
     from the discriminator call.
     """
-    version_label = "Version 1" if preferred == 2 else "Version 2"
+    # version_label = "Version 1" if preferred == 2 else "Version 2"
 
     parts: list[str] = []
     parts.append(f"<Non-Preferred Instruction>\n{non_preferred_prompt.value}\n</Non-Preferred Instruction>")
