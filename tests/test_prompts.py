@@ -162,3 +162,37 @@ def test_format_additional_info_block_single_string():
     result = _format_additional_info_block("be concise")
     assert "- be concise" in result
     assert "<Additional Information>" in result
+
+# --- system_prompt isolation tests ---
+
+def test_discriminator_does_not_see_system_prompt():
+    """Discriminator prompt must not contain the task model's system_prompt.
+
+    The system_prompt is only used during generation — it should never leak
+    into the trajectories or the discriminator/optimizer prompts.
+    """
+    secret = "SECRET_SYSTEM_PROMPT_XYLOPHONE_42"
+    # Simulate outputs generated WITH a system_prompt (prompt_sent includes it)
+    outputs_a = [ModelOutput(
+        sample_index=0,
+        prompt_sent=f"[system] {secret}\n\n[user] Be careful.\n\nWhat is 2+2?",
+        response="The answer is 4.",
+    )]
+    outputs_b = [ModelOutput(
+        sample_index=0,
+        prompt_sent=f"[system] {secret}\n\n[user] Think step by step.\n\nWhat is 2+2?",
+        response="2+2 = 4.",
+    )]
+    samples = [Sample(index=0, question="What is 2+2?", target="4")]
+
+    # Build trajectories (these only use response + question, not prompt_sent)
+    traj_a = build_instruction_trajectory(outputs_a, samples, show_expected=False)
+    traj_b = build_instruction_trajectory(outputs_b, samples, show_expected=False)
+    assert secret not in traj_a
+    assert secret not in traj_b
+
+    # Build discriminator prompt
+    cfg = DiscriminatorConfig(criteria="correctness")
+    sys_p, user_p = build_discriminator_prompt(traj_a, traj_b, cfg)
+    assert secret not in sys_p
+    assert secret not in user_p

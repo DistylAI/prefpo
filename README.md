@@ -193,6 +193,7 @@ mode: "instruction"
 task_model:
   name: "openai/gpt-4o"
   temperature: 0.0
+  system_prompt: "You are a helpful math tutor."  # optional, only with prompt_role="user"
 
 discriminator:
   model:
@@ -272,6 +273,27 @@ When `show_expected=True`, the discriminator sees expected answers alongside mod
 - **`"system"`**: the instruction is sent as a separate system message, with the question as the user message
 
 Standalone mode requires `"user"` since the prompt is the entire user input.
+
+### System Prompt
+
+Set `system_prompt` on the task model to include a fixed system message in every generation. This lets you replicate your production environment during optimization — the system prompt affects model behavior but is invisible to the discriminator and optimizer.
+
+```python
+config = PrefPOConfig(
+    mode="instruction",
+    task_model=ModelConfig(name="openai/gpt-4o", system_prompt="You are a helpful math tutor."),
+    pool={"initial_prompts": ["Solve the problem step by step."]},
+    run={"iterations": 5},
+)
+```
+
+```yaml
+task_model:
+  name: "openai/gpt-4o"
+  system_prompt: "You are a helpful math tutor."
+```
+
+Only available with `prompt_role="user"` (default). When `prompt_role="system"`, the optimized prompt is already the system message, so setting `system_prompt` raises an error.
 
 ### Single-Prompt Pools
 
@@ -474,7 +496,7 @@ All public symbols are exported from the top-level `prefpo` package.
 | `optimize_async(config, grader, ...)` | Run optimization (async) |
 | `optimize_multi_trial(config, grader, ...)` | Run multiple independent trials in parallel |
 | `PrefPOConfig` | Top-level configuration (mode, models, pool, run settings) |
-| `ModelConfig` | Model name, temperature, reasoning settings |
+| `ModelConfig` | Model name, temperature, reasoning settings, optional `system_prompt` |
 | `DiscriminatorConfig` | Judge model, criteria, additional_info, show_expected |
 | `OptimizerConfig` | Optimizer model and constraints |
 | `OptimizationResult` | Result with best_prompt, best_score, history, total_tokens |

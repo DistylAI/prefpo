@@ -269,3 +269,16 @@ async def test_optimize_multi_trial_dispatch():
         assert len(summaries) == 1
         data = json.loads(summaries[0].read_text())
         assert data["n_trials"] == 2
+
+@pytest.mark.asyncio
+async def test_system_prompt_with_system_role_raises():
+    """system_prompt + prompt_role='system' is invalid — raises ValueError."""
+    config = PrefPOConfig(
+        mode="instruction",
+        task_model={"name": "openai/gpt-4o", "system_prompt": "You are helpful."},
+        pool={"initial_prompts": ["test"], "prompt_role": "system"},
+    )
+    grader = MockGrader()
+    train = [Sample(index=0, question="Q", target="A")]
+    with pytest.raises(ValueError, match="Cannot set task_model.system_prompt"):
+        await optimize_async(config, grader=grader, train=train)

@@ -12,34 +12,49 @@ def _format_prompt_sent(messages: list[dict[str, str]]) -> str:
 
 
 def format_instruction_messages(
-    prompt: Prompt, sample: Sample
+    prompt: Prompt, sample: Sample, *, system_prompt: str | None = None
 ) -> list[dict[str, str]]:
     """Build the message list for instruction mode (prompt + question).
 
     USER role: single user message, instruction prepended to question.
     SYSTEM role: instruction in system message, question in user message.
     Empty prompt: omit instruction, just send question.
+
+    When system_prompt is set, it is prepended as a system message. Only
+    valid with prompt_role="user" — use optimize.py validation to block
+    prompt_role="system" + system_prompt.
     """
+    messages: list[dict[str, str]] = []
+
+    if system_prompt is not None:
+        messages.append({"role": "system", "content": system_prompt})
+
     if prompt.value == "":
-        return [{"role": "user", "content": sample.question}]
-
-    if prompt.role == PromptRole.USER:
-        return [{"role": "user", "content": f"{prompt.value}\n\n{sample.question}"}]
+        messages.append({"role": "user", "content": sample.question})
+    elif prompt.role == PromptRole.USER:
+        messages.append({"role": "user", "content": f"{prompt.value}\n\n{sample.question}"})
     else:
-        return [
-            {"role": "system", "content": prompt.value},
-            {"role": "user", "content": sample.question},
-        ]
+        messages.append({"role": "system", "content": prompt.value})
+        messages.append({"role": "user", "content": sample.question})
+
+    return messages
 
 
-def format_standalone_messages(prompt: Prompt) -> list[dict[str, str]]:
+def format_standalone_messages(
+    prompt: Prompt, *, system_prompt: str | None = None
+) -> list[dict[str, str]]:
     """Build the message list for standalone mode (prompt only).
 
     Standalone mode requires USER role — the prompt IS the user input.
+    When system_prompt is set, it is prepended as a system message.
     """
     if prompt.role != PromptRole.USER:
         raise ValueError("Standalone mode requires prompt_role='user'")
-    return [{"role": "user", "content": prompt.value}]
+    messages: list[dict[str, str]] = []
+    if system_prompt is not None:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt.value})
+    return messages
 
 
 async def generate_outputs(
@@ -54,7 +69,9 @@ async def generate_outputs(
     """
 
     async def _generate_one(sample: Sample) -> ModelOutput:
-        messages = format_instruction_messages(prompt, sample)
+        messages = format_instruction_messages(
+            prompt, sample, system_prompt=model_config.system_prompt
+        )
         async with semaphore:
             response = await call_llm(
                 model=model_config.name,
@@ -84,7 +101,7 @@ async def generate_standalone(
     Generates n outputs from the same prompt. Returns ModelOutput with
     sample_index=-1 (no associated sample).
     """
-    messages = format_standalone_messages(prompt)
+    messages = format_standalone_messages(prompt, system_prompt=model_config.system_prompt)
 
     async def _generate_one(i: int) -> ModelOutput:
         async with semaphore:
