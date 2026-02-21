@@ -43,6 +43,54 @@ def test_standalone_system_role_rejected():
     p = Prompt(value="Write a poem.", role=PromptRole.SYSTEM)
     with pytest.raises(ValueError, match="Standalone mode requires"):
         format_standalone_messages(p)
+# --- system_prompt tests ---
+
+def test_instruction_user_role_with_system_prompt():
+    """system_prompt adds a system message before the user message."""
+    p = Prompt(value="Be careful.", role=PromptRole.USER)
+    s = Sample(index=0, question="What is 2+2?")
+    msgs = format_instruction_messages(p, s, system_prompt="You are a math tutor.")
+    assert len(msgs) == 2
+    assert msgs[0]["role"] == "system"
+    assert msgs[0]["content"] == "You are a math tutor."
+    assert msgs[1]["role"] == "user"
+    assert "Be careful." in msgs[1]["content"]
+    assert "What is 2+2?" in msgs[1]["content"]
+
+def test_instruction_user_role_without_system_prompt_unchanged():
+    """No system_prompt — behavior unchanged (single user message)."""
+    p = Prompt(value="Be careful.", role=PromptRole.USER)
+    s = Sample(index=0, question="What is 2+2?")
+    msgs = format_instruction_messages(p, s, system_prompt=None)
+    assert len(msgs) == 1
+    assert msgs[0]["role"] == "user"
+
+def test_standalone_with_system_prompt():
+    """system_prompt adds a system message before the user prompt."""
+    p = Prompt(value="Write a poem.", role=PromptRole.USER)
+    msgs = format_standalone_messages(p, system_prompt="You are a poet.")
+    assert len(msgs) == 2
+    assert msgs[0]["role"] == "system"
+    assert msgs[0]["content"] == "You are a poet."
+    assert msgs[1]["role"] == "user"
+    assert msgs[1]["content"] == "Write a poem."
+
+def test_standalone_without_system_prompt_unchanged():
+    """No system_prompt — behavior unchanged (single user message)."""
+    p = Prompt(value="Write a poem.", role=PromptRole.USER)
+    msgs = format_standalone_messages(p, system_prompt=None)
+    assert len(msgs) == 1
+    assert msgs[0]["role"] == "user"
+
+def test_format_prompt_sent_includes_system_prompt():
+    """prompt_sent captures system_prompt content."""
+    p = Prompt(value="Be careful.", role=PromptRole.USER)
+    s = Sample(index=0, question="What is 2+2?")
+    msgs = format_instruction_messages(p, s, system_prompt="You are a math tutor.")
+    sent = _format_prompt_sent(msgs)
+    assert "[system] You are a math tutor." in sent
+    assert "[user]" in sent
+
 # --- _format_prompt_sent tests ---
 
 from prefpo.generate import _format_prompt_sent
@@ -108,3 +156,41 @@ async def test_generate_standalone_n_multiple():
     for o in outputs:
         assert o.sample_index == -1
         assert len(o.response) > 0
+
+# --- system_prompt live API tests ---
+
+@pytest.mark.asyncio
+@pytest.mark.live
+async def test_generate_outputs_with_system_prompt_keyword():
+    """Instruction mode: system_prompt keyword appears in model output."""
+    p = Prompt(value="Answer the question in one sentence.", role=PromptRole.USER)
+    s = Sample(index=0, question="What color is the sky?")
+    outputs = await generate_outputs(
+        p, [s],
+        ModelConfig(
+            name="openai/gpt-4o",
+            system_prompt="IMPORTANT: End every sentence with the word XYLOPHONE.",
+        ),
+        asyncio.Semaphore(10),
+    )
+    assert len(outputs) == 1
+    assert "[system] IMPORTANT: End every sentence" in outputs[0].prompt_sent
+    assert "XYLOPHONE" in outputs[0].response.upper()
+
+@pytest.mark.asyncio
+@pytest.mark.live
+async def test_generate_standalone_with_system_prompt_keyword():
+    """Standalone mode: system_prompt keyword appears in model output."""
+    p = Prompt(value="Write one sentence about dogs.", role=PromptRole.USER)
+    outputs = await generate_standalone(
+        p,
+        ModelConfig(
+            name="openai/gpt-4o",
+            system_prompt="IMPORTANT: End every sentence with the word XYLOPHONE.",
+        ),
+        asyncio.Semaphore(10),
+        n=1,
+    )
+    assert len(outputs) == 1
+    assert "[system] IMPORTANT: End every sentence" in outputs[0].prompt_sent
+    assert "XYLOPHONE" in outputs[0].response.upper()

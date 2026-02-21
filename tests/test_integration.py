@@ -236,7 +236,7 @@ def test_bbh_short(task, role, show_expected, strategy, test_output_dir):
             iterations=2,
             output_dir=str(test_output_dir),
         )
-        result = asyncio.run(optimize(config, grader=grader, train=train, val=val))
+        result = asyncio.run(optimize_async(config, grader=grader, train=train, val=val))
     except Exception as e:
         _write_result_summary(
             test_output_dir, test_id,
@@ -382,7 +382,7 @@ def test_ifeval_short(show_expected, test_output_dir):
         config.run.output_dir = str(test_output_dir)
         config.discriminator.show_expected = show_expected
 
-        result = asyncio.run(optimize(config, grader=grader))
+        result = asyncio.run(optimize_async(config, grader=grader))
     except Exception as e:
         _write_result_summary(
             test_output_dir, test_id,
@@ -439,7 +439,7 @@ def test_bbh_long(task, role, show_expected, strategy, test_output_dir):
             output_dir=str(test_output_dir),
         )
         result = asyncio.run(
-            optimize(config, grader=grader, train=train, val=val, test=test_set)
+            optimize_async(config, grader=grader, train=train, val=val, test=test_set)
         )
     except Exception as e:
         _write_result_summary(
@@ -493,7 +493,7 @@ def test_ifeval_long(sample_idx, test_output_dir):
         config.run.max_concurrent = 50
         config.run.output_dir = str(test_output_dir)
 
-        result = asyncio.run(optimize(config, grader=grader))
+        result = asyncio.run(optimize_async(config, grader=grader))
     except Exception as e:
         _write_result_summary(
             test_output_dir, test_id,

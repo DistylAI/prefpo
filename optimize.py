@@ -234,6 +234,13 @@ async def optimize_async(
         return best_trial
 
     # --- Input validation ---
+    if config.task_model.system_prompt is not None and config.pool.prompt_role == "system":
+        raise ValueError(
+            "Cannot set task_model.system_prompt when prompt_role='system' — "
+            "the optimized prompt is already the system message. "
+            "Use prompt_role='user' to optimize the user prompt with a fixed system prompt."
+        )
+
     if config.mode == "instruction":
         if train is None or len(train) == 0:
             raise ValueError("Instruction mode requires train samples")

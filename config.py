@@ -14,6 +14,7 @@ class ModelConfig(BaseModel):
     is_reasoning: bool = False
     reasoning_effort: Literal["low", "medium", "high"] = "medium"
     temperature: float = 0.0
+    system_prompt: str | None = None
 
 
 class DiscriminatorConfig(BaseModel):
