@@ -566,9 +566,13 @@ Token counts are also saved to `summary.json` (totals) and `iteration_history.js
 If you use PrefPO in your research, please cite:
 
 ```bibtex
-@article{prefpo2026,
-  title={TODO},
-  author={TODO},
-  year={2026},
+@misc{singhal2026prefpopairwisepreferenceprompt,
+      title={PrefPO: Pairwise Preference Prompt Optimization}, 
+      author={Rahul Singhal and Pradyumna Tambwekar and Karime Maamari},
+      year={2026},
+      eprint={2603.19311},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2603.19311}, 
 }
 ```
