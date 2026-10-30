@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -34,12 +34,17 @@ from prefpo.results import RunLogger
 from prefpo.types import (
     DiscriminatorResult,
     IterationRecord,
+    ModelOutput,
     Prompt,
     PromptRole,
     Sample,
 )
 
 logger = logging.getLogger(__name__)
+
+InstructionOutputGenerator = Callable[
+    [Prompt, list[Sample], ModelConfig, asyncio.Semaphore], Awaitable[list[ModelOutput]]
+]
 
 
 # ---------------------------------------------------------------------------
@@ -67,14 +72,21 @@ async def run_iteration(
     opt_config: OptimizerConfig,
     iteration_index: int,
     semaphore: asyncio.Semaphore,
+    generate_instruction_outputs: InstructionOutputGenerator | None = None,
 ) -> SingleIterationResult:
     """One PRPO iteration: generate trajectories, discriminate, improve."""
 
     # Step 1 — Generate trajectories (mode-dependent, parallel)
     if mode == "instruction":
+        assert train_samples is not None
+        generator = (
+            generate_outputs
+            if generate_instruction_outputs is None
+            else generate_instruction_outputs
+        )
         outputs_a, outputs_b = await asyncio.gather(
-            generate_outputs(prompt_a, train_samples, task_model, semaphore),
-            generate_outputs(prompt_b, train_samples, task_model, semaphore),
+            generator(prompt_a, train_samples, task_model, semaphore),
+            generator(prompt_b, train_samples, task_model, semaphore),
         )
         traj_a = build_instruction_trajectory(
             outputs_a, train_samples, disc_config.show_expected
@@ -192,15 +204,19 @@ async def optimize_async(
     test: list[Sample] | None = None,
     _trial_index: int | None = None,
     _on_iteration: Callable[[int, float], None] | None = None,
+    generate_instruction_outputs: InstructionOutputGenerator | None = None,
 ) -> OptimizationResult:
     """Run the full PrefPO optimization (async version).
 
     If config.run.n_trials > 1, dispatches to optimize_multi_trial()
     and returns the best trial's OptimizationResult.
+    The optional generator supplies instruction-mode pairwise trajectories only.
     """
     # Dispatch to multi-trial if needed
     if config.run.n_trials > 1:
-        multi = await optimize_multi_trial(config, grader, train, val, test)
+        multi = await optimize_multi_trial(
+            config, grader, train, val, test, generate_instruction_outputs
+        )
         best_trial = max(multi.trials, key=lambda t: t.best_score)
 
         # Log aggregate stats so they're accessible from disk
@@ -355,6 +371,7 @@ async def optimize_async(
             opt_config=config.optimizer,
             iteration_index=i,
             semaphore=semaphore,
+            generate_instruction_outputs=generate_instruction_outputs,
         )
 
         # Update pool
@@ -517,6 +534,7 @@ async def optimize_multi_trial(
     train: list[Sample] | None = None,
     val: list[Sample] | None = None,
     test: list[Sample] | None = None,
+    generate_instruction_outputs: InstructionOutputGenerator | None = None,
 ) -> MultiTrialResult:
     """Run config.run.n_trials independent trials and aggregate.
 
@@ -543,6 +561,7 @@ async def optimize_multi_trial(
             trial_config, grader, train, val, test,
             _trial_index=trial_idx,
             _on_iteration=display.make_callback(trial_idx),
+            generate_instruction_outputs=generate_instruction_outputs,
         )
         display.complete_trial(trial_idx, result.best_score)
         return result
