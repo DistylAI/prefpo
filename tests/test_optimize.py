@@ -58,7 +58,7 @@ async def test_optimize_instruction_mode():
         disc_resp = _make_mock_response(disc_json, "resp_disc")
         opt_resp = _make_mock_response(opt_json, "resp_opt")
 
-        with patch("prefpo.optimize.generate_outputs", new_callable=AsyncMock, return_value=mock_outputs), \
+        with patch("prefpo.optimize.generate_outputs", new_callable=AsyncMock, return_value=mock_outputs) as default_generator, \
              patch("prefpo.optimize.call_discriminator_with_messages", new_callable=AsyncMock, return_value=(
                  json.loads(disc_json),
                  [{"role": "system", "content": "s"}, {"role": "user", "content": "u"}, {"role": "assistant", "content": disc_json}],
@@ -74,6 +74,55 @@ async def test_optimize_instruction_mode():
         assert result.best_score == 0.8
         assert len(result.history) == 1
         assert len(result.final_pool["prompts"]) >= 2
+        assert default_generator.await_count == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("n_trials", [1, 2])
+async def test_optimize_instruction_generator_callback(n_trials):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config = PrefPOConfig(
+            mode="instruction",
+            task_model={"name": "openai/gpt-4o"},
+            pool={"initial_prompts": ["prompt A", "prompt B"]},
+            run={"iterations": 1, "n_trials": n_trials, "output_dir": tmpdir},
+        )
+        train = [
+            Sample(index=0, question="Q1", target="A1"),
+            Sample(index=1, question="Q2", target="A2"),
+        ]
+        outputs = [
+            ModelOutput(sample_index=sample.index, prompt_sent="p", response="answer")
+            for sample in train
+        ]
+        generator = AsyncMock(return_value=outputs)
+        discriminator_response = _make_mock_response("disc")
+        optimizer_response = _make_mock_response("opt")
+
+        with patch("prefpo.optimize.generate_outputs", new_callable=AsyncMock) as default_generator, \
+             patch("prefpo.optimize.call_discriminator_with_messages", new_callable=AsyncMock, return_value=(
+                 {"preferred": 1, "feedback": "good"}, [], discriminator_response,
+             )), \
+             patch("prefpo.optimize.call_optimizer_with_messages", new_callable=AsyncMock, return_value=(
+                 {"prompt": "improved prompt"}, optimizer_response,
+             )):
+            result = await optimize_async(
+                config, grader=MockGrader(), train=train,
+                generate_instruction_outputs=generator,
+            )
+
+        assert len(result.history) == 1
+        default_generator.assert_not_awaited()
+        assert generator.await_count == 2 * n_trials
+        calls = generator.await_args_list
+        assert all(call.args[1] is train for call in calls)
+        assert all(call.args[2].name == config.task_model.name for call in calls)
+        semaphores = {call.args[3] for call in calls}
+        assert len(semaphores) == n_trials
+        for semaphore in semaphores:
+            pair = [call for call in calls if call.args[3] is semaphore]
+            assert {call.args[0].value for call in pair} == {"prompt A", "prompt B"}
+
 @pytest.mark.asyncio
 async def test_optimize_single_prompt_instruction():
     """Single prompt in instruction mode should generate a variant."""
